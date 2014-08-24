@@ -77,54 +77,54 @@ PotsSide AlwaysLo(const CDeque& pots, size_t l, size_t r)
 
 PotsSide LessForEnemy(const CDeque& pots, size_t l, size_t r)
 {
-    if(r-l <= 3)
+    if(r-l < 3)
         return AlwaysHi(pots, l, r);
-    VAL L = std::max(pots[l+1], pots[r-1]);
-    VAL R = std::max(pots[l+0], pots[r-2]);
+    VAL L = std::max(pots[l+1], pots[r-0]);
+    VAL R = std::max(pots[l+0], pots[r-1]);
     return L < R ? TakeLeft : TakeRight;
 }
 
 PotsSide MoreForEnemy(const CDeque& pots, size_t l, size_t r)
 {
-    if(r-l <= 3)
+    if(r-l < 3)
         return AlwaysHi(pots, l, r);
-    VAL L = std::max(pots[l+1], pots[r-1]);
-    VAL R = std::max(pots[l+0], pots[r-2]);
+    VAL L = std::max(pots[l+1], pots[r-0]);
+    VAL R = std::max(pots[l+0], pots[r-1]);
     return L > R ? TakeLeft : TakeRight;
 }
 
 PotsSide MaximizePair(const CDeque& pots, size_t l, size_t r)
 {
-    if(r-l <= 3)
+    if(r-l < 3)
         return AlwaysHi(pots, l, r);
     // ours minus their potential points
-    int L = pots[l] - std::max(pots[l+1], pots[r-1]);
-    int R = pots[r] - std::max(pots[l+0], pots[r-2]);
+    int L = pots[l] - std::max(pots[l+1], pots[r-0]);
+    int R = pots[r] - std::max(pots[l+0], pots[r-1]);
     return L > R ? TakeLeft : TakeRight;
 }
 
 PotsSide MaximizeThree(const CDeque& pots, size_t l, size_t r)
 {
-    if(r-l <= 3)
+    if(r-l < 3)
         return AlwaysHi(pots, l, r);
     // ours minus their potential points
     int L = pots[l];
-    if(pots[l+1] > pots[r-1])
+    if(pots[l+1] > pots[r-0])
     {
-        L = L - pots[l+1] + std::max(pots[l+2], pots[r-1]);
+        L = L - pots[l+1] + std::max(pots[l+1+1], pots[r-0]);
     }
     else
     {
-        L = L - pots[r-1] + std::max(pots[l+1], pots[r-2]);
+        L = L - pots[r-0] + std::max(pots[l+1+0], pots[r-1]);
     }
     int R = pots[r];
-    if(pots[l+0] > pots[r-2])
+    if(pots[l+0] > pots[r-1])
     {
-        R = R - pots[l+0] + std::max(pots[l+1], pots[r-2]);
+        R = R - pots[l+0] + std::max(pots[l+0+1], pots[r-1]);
     }
     else
     {
-        R = R - pots[r-2] + std::max(pots[l+0], pots[r-3]);
+        R = R - pots[r-1] + std::max(pots[l+0+0], pots[r-1-1]);
     }
     return L > R ? TakeLeft : TakeRight;
 }
@@ -147,17 +147,16 @@ int CheckMaximize(const CDeque& pots, size_t l, size_t r, bool enemy)
         mod = pots[r];
         --r;
     }
-    std::cout << int(mod*mul) << std::endl;
     return mod*mul+CheckMaximize(pots, l, r, !enemy);
 }
 
 PotsSide MaximizeAll(const CDeque& pots, size_t l, size_t r)
 {
-    if(r-l <= 3)
+    if(r-l < 3)
         return AlwaysHi(pots, l, r);
     // ours minus their potential points
-    int L = pots[l] + CheckMaximize(pots, l+1, r-1, false);
-    int R = pots[r]  + CheckMaximize(pots, l+0, r-2, false);
+    int L = pots[l] + CheckMaximize(pots, l+1, r-0, false);
+    int R = pots[r] + CheckMaximize(pots, l+0, r-1, false);
     return L > R ? TakeLeft : TakeRight;
 }
 
@@ -183,11 +182,11 @@ VAL CheckEnemy(const CDeque& pots, size_t l, size_t r, bool enemy)
 
 PotsSide MinimizeEnemy(const CDeque& pots, size_t l, size_t r)
 {
-    if(r-l <= 3)
+    if(r-l < 3)
         return AlwaysHi(pots, l, r);
     // enemy points
-    int L = CheckEnemy(pots, l+1, r-1, false);
-    int R = CheckEnemy(pots, l+0, r-2, false);
+    VAL L = CheckEnemy(pots, l+1, r-0, false);
+    VAL R = CheckEnemy(pots, l+0, r-1, false);
     return L < R ? TakeLeft : TakeRight;
 }
 
@@ -209,7 +208,11 @@ strategyInfo STRATEGIES[] =
         { &MaximizeThree,"maximize three" },
         { &MaximizeAll,  "maximize all" },
         { &MinimizeEnemy,"minimize enemy" },
+//        { &MaximizeEqual,"maximize all & equal"}
 };
+
+bool gen = false;
+bool verbose = !gen;
 
 class CPlayer
 {
@@ -226,6 +229,7 @@ public:
     {
         const auto pots = game.GetPots();
         const PotsSide side = strategy(pots, 0, pots.size()-1);
+        if(verbose) std::cout << ((TakeLeft == side) ? 'L' : 'R');
         VAL pts = (TakeLeft == side) ? game.TakeL() : game.TakeR();
         points += pts;
         return pts;
@@ -236,9 +240,6 @@ public:
         return points;
     }
 };
-
-bool gen = false;
-bool verbose = !gen;
 
 CDeque GenPots()
 {
