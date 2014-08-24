@@ -48,86 +48,85 @@ public:
     }
 };
 
-typedef VAL (*Strategy)(CPotsHolder& game);
-
-VAL AlwaysL(CPotsHolder& potsHolder)
+enum PotsSide
 {
-    return potsHolder.TakeL();
+    TakeLeft  = false,
+    TakeRight = true,
+};
+typedef PotsSide (*Strategy)(const CDeque& pots, size_t l, size_t r);
+
+PotsSide AlwaysL(const CDeque& pots, size_t, size_t)
+{
+    return TakeLeft;
 }
 
-VAL AlwaysR(CPotsHolder& potsHolder)
+PotsSide AlwaysR(const CDeque& pots, size_t, size_t)
 {
-    return potsHolder.TakeR();
+    return TakeRight;
 }
 
-VAL AlwaysHi(CPotsHolder& potsHolder)
+PotsSide AlwaysHi(const CDeque& pots, size_t l, size_t r)
 {
-    auto pots = potsHolder.GetPots();
-    return pots.front() > pots.back() ? potsHolder.TakeL() : potsHolder.TakeR();
+    return pots[l] > pots[r] ? TakeLeft : TakeRight;
 }
 
-VAL AlwaysLo(CPotsHolder& potsHolder)
+PotsSide AlwaysLo(const CDeque& pots, size_t l, size_t r)
 {
-    auto pots = potsHolder.GetPots();
-    return pots.front() < pots.back() ? potsHolder.TakeL() : potsHolder.TakeR();
+    return pots[l] < pots[r] ? TakeLeft : TakeRight;
 }
 
-VAL LessForEnemy(CPotsHolder& potsHolder)
+PotsSide LessForEnemy(const CDeque& pots, size_t l, size_t r)
 {
-    auto pots = potsHolder.GetPots();
-    if(pots.size() <= 3)
-        return AlwaysHi(potsHolder);
-    VAL L = std::max(pots[1], pots[pots.size()-1]);
-    VAL R = std::max(pots[0], pots[pots.size()-2]);
-    return L < R ? potsHolder.TakeL() : potsHolder.TakeR();
+    if(r-l <= 3)
+        return AlwaysHi(pots, l, r);
+    VAL L = std::max(pots[l+1], pots[r-1]);
+    VAL R = std::max(pots[l+0], pots[r-2]);
+    return L < R ? TakeLeft : TakeRight;
 }
 
-VAL MoreForEnemy(CPotsHolder& potsHolder)
+PotsSide MoreForEnemy(const CDeque& pots, size_t l, size_t r)
 {
-    auto pots = potsHolder.GetPots();
-    if(pots.size() <= 3)
-        return AlwaysHi(potsHolder);
-    VAL L = std::max(pots[1], pots[pots.size()-1]);
-    VAL R = std::max(pots[0], pots[pots.size()-2]);
-    return L > R ? potsHolder.TakeL() : potsHolder.TakeR();
+    if(r-l <= 3)
+        return AlwaysHi(pots, l, r);
+    VAL L = std::max(pots[l+1], pots[r-1]);
+    VAL R = std::max(pots[l+0], pots[r-2]);
+    return L > R ? TakeLeft : TakeRight;
 }
 
-VAL MaximizePair(CPotsHolder& potsHolder)
+PotsSide MaximizePair(const CDeque& pots, size_t l, size_t r)
 {
-    auto pots = potsHolder.GetPots();
-    if(pots.size() <= 3)
-        return AlwaysHi(potsHolder);
+    if(r-l <= 3)
+        return AlwaysHi(pots, l, r);
     // ours minus their potential points
-    int L = pots.front() - std::max(pots[1], pots[pots.size()-1]);
-    int R = pots.back() - std::max(pots[0], pots[pots.size()-2]);
-    return L > R ? potsHolder.TakeL() : potsHolder.TakeR();
+    int L = pots[l] - std::max(pots[l+1], pots[r-1]);
+    int R = pots[r] - std::max(pots[l+0], pots[r-2]);
+    return L > R ? TakeLeft : TakeRight;
 }
 
-VAL MaximizeThree(CPotsHolder& potsHolder)
+PotsSide MaximizeThree(const CDeque& pots, size_t l, size_t r)
 {
-    auto pots = potsHolder.GetPots();
-    if(pots.size() <= 3)
-        return AlwaysHi(potsHolder);
+    if(r-l <= 3)
+        return AlwaysHi(pots, l, r);
     // ours minus their potential points
-    int L = pots.front();
-    if(pots[1] > pots[pots.size()-1])
+    int L = pots[l];
+    if(pots[l+1] > pots[r-1])
     {
-        L = L - pots[1] + std::max(pots[2], pots[pots.size()-1]);
+        L = L - pots[l+1] + std::max(pots[l+2], pots[r-1]);
     }
     else
     {
-        L = L - pots[pots.size()-1] + std::max(pots[1], pots[pots.size()-2]);
+        L = L - pots[r-1] + std::max(pots[l+1], pots[r-2]);
     }
-    int R = pots.back();
-    if(pots[0] > pots[pots.size()-2])
+    int R = pots[r];
+    if(pots[l+0] > pots[r-2])
     {
-        R = R - pots[0] + std::max(pots[1], pots[pots.size()-2]);
+        R = R - pots[l+0] + std::max(pots[l+1], pots[r-2]);
     }
     else
     {
-        R = R - pots[pots.size()-2] + std::max(pots[0], pots[pots.size()-3]);
+        R = R - pots[r-2] + std::max(pots[l+0], pots[r-3]);
     }
-    return L > R ? potsHolder.TakeL() : potsHolder.TakeR();
+    return L > R ? TakeLeft : TakeRight;
 }
 
 int CheckMaximize(const CDeque& pots, size_t l, size_t r, bool enemy)
@@ -152,15 +151,14 @@ int CheckMaximize(const CDeque& pots, size_t l, size_t r, bool enemy)
     return mod*mul+CheckMaximize(pots, l, r, !enemy);
 }
 
-VAL MaximizeAll(CPotsHolder& potsHolder)
+PotsSide MaximizeAll(const CDeque& pots, size_t l, size_t r)
 {
-    auto pots = potsHolder.GetPots();
-    if(pots.size() <= 3)
-        return AlwaysHi(potsHolder);
+    if(r-l <= 3)
+        return AlwaysHi(pots, l, r);
     // ours minus their potential points
-    int L = pots.front() + CheckMaximize(pots, 1, pots.size()-1, false);
-    int R = pots.back()  + CheckMaximize(pots, 0, pots.size()-2, false);
-    return L > R ? potsHolder.TakeL() : potsHolder.TakeR();
+    int L = pots[l] + CheckMaximize(pots, l+1, r-1, false);
+    int R = pots[r]  + CheckMaximize(pots, l+0, r-2, false);
+    return L > R ? TakeLeft : TakeRight;
 }
 
 VAL CheckEnemy(const CDeque& pots, size_t l, size_t r, bool enemy)
@@ -183,15 +181,14 @@ VAL CheckEnemy(const CDeque& pots, size_t l, size_t r, bool enemy)
     return (enemy ? pts : 0) + CheckMaximize(pots, l, r, !enemy);
 }
 
-VAL MinimizeEnemy(CPotsHolder &potsHolder)
+PotsSide MinimizeEnemy(const CDeque& pots, size_t l, size_t r)
 {
-    auto pots = potsHolder.GetPots();
-    if(pots.size() <= 3)
-        return AlwaysHi(potsHolder);
+    if(r-l <= 3)
+        return AlwaysHi(pots, l, r);
     // enemy points
-    int L = CheckEnemy(pots, 1, pots.size()-1, false);
-    int R = CheckEnemy(pots, 0, pots.size()-2, false);
-    return L < R ? potsHolder.TakeL() : potsHolder.TakeR();
+    int L = CheckEnemy(pots, l+1, r-1, false);
+    int R = CheckEnemy(pots, l+0, r-2, false);
+    return L < R ? TakeLeft : TakeRight;
 }
 
 struct strategyInfo
@@ -227,7 +224,9 @@ public:
 
     VAL Move(CPotsHolder& game)
     {
-        VAL pts = strategy(game);
+        const auto pots = game.GetPots();
+        const PotsSide side = strategy(pots, 0, pots.size()-1);
+        VAL pts = (TakeLeft == side) ? game.TakeL() : game.TakeR();
         points += pts;
         return pts;
     }
@@ -249,7 +248,7 @@ CDeque GenPots()
     potsNum -= potsNum%2;
     for(auto i = 0; i < potsNum; ++i)
     {
-        if(gen) arrGen.push_back(1+uint(rand())%3);
+        if(gen) arrGen.push_back(1+rand()%3);
     }
     return std::move(arrGen);
 }
