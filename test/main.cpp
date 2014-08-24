@@ -1,6 +1,9 @@
 #include <iostream>
 #include <deque>
 
+bool gen = true;
+bool verbose = !gen;
+
 typedef unsigned int VAL;
 typedef std::deque<VAL> CDeque;
 
@@ -190,6 +193,42 @@ PotsSide MinimizeEnemy(const CDeque& pots, size_t l, size_t r)
     return L < R ? TakeLeft : TakeRight;
 }
 
+PotsSide MaximizeEqual(const CDeque& pots, size_t l, size_t r);
+
+int CheckMaximizeEq(const CDeque& pots, size_t l, size_t r, bool enemy)
+{
+    int mul = enemy ? 1 : -1;
+    if(l==r)
+    {
+        return mul*pots[l];
+    }
+    VAL mod = 0;
+    auto side = MaximizeEqual(pots, l, r);
+    if(TakeLeft == side)
+    {
+        mod = pots[l];
+        ++l;
+    }
+    else
+    {
+        mod = pots[r];
+        --r;
+    }
+    return mod*mul+CheckMaximizeEq(pots, l, r, !enemy);
+}
+
+PotsSide MaximizeEqual(const CDeque& pots, size_t l, size_t r)
+{
+    if(r-l < 3)
+        return AlwaysHi(pots, l, r);
+    // ours minus their potential points
+    int L = pots[l] + CheckMaximizeEq(pots, l+1, r-0, false);
+    int R = pots[r] + CheckMaximizeEq(pots, l+0, r-1, false);
+    if(L == R)
+        return AlwaysHi(pots, l, r);
+    return L > R ? TakeLeft : TakeRight;
+}
+
 struct strategyInfo
 {
     Strategy    strategy;
@@ -208,11 +247,8 @@ strategyInfo STRATEGIES[] =
         { &MaximizeThree,"maximize three" },
         { &MaximizeAll,  "maximize all" },
         { &MinimizeEnemy,"minimize enemy" },
-//        { &MaximizeEqual,"maximize all & equal"}
+        { &MaximizeEqual,"maximize all & equal"}
 };
-
-bool gen = false;
-bool verbose = !gen;
 
 class CPlayer
 {
@@ -243,13 +279,13 @@ public:
 
 CDeque GenPots()
 {
-    CDeque arrGen = {2, 3, 2, 1, 3, 2};
+    CDeque arrGen = {2, 2, 1, 1, 3, 2};
     if(gen) arrGen.clear();
-    auto potsNum = 6;//4+rand()%10;
+    auto potsNum = 4+rand()%10;
     potsNum -= potsNum%2;
     for(auto i = 0; i < potsNum; ++i)
     {
-        if(gen) arrGen.push_back(1+rand()%3);
+        if(gen) arrGen.push_back(1+rand()%9);
     }
     return std::move(arrGen);
 }
@@ -258,7 +294,7 @@ int main(int argc, const char * argv[])
 {
     const auto lastStrategyIdx = std::extent<decltype(STRATEGIES)>::value-1;
     std::cout << "Testing [" << STRATEGIES[lastStrategyIdx].name << "] strategy:" << std::endl;
-    for(int i = 0; i < (gen?999:1); ++i)
+    for(int i = 0; i < (gen?9999:1); ++i)
     {
         CDeque arrGen = GenPots();
         CPotsHolder(arrGen).Print();
