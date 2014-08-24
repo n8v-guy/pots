@@ -98,8 +98,8 @@ VAL MaximizePair(CPotsHolder& potsHolder)
     if(pots.size() <= 3)
         return AlwaysHi(potsHolder);
     // ours minus their potential points
-    signed L = pots.front() - std::max(pots[1], pots[pots.size()-1]);
-    signed R = pots.back() - std::max(pots[0], pots[pots.size()-2]);
+    int L = pots.front() - std::max(pots[1], pots[pots.size()-1]);
+    int R = pots.back() - std::max(pots[0], pots[pots.size()-2]);
     return L > R ? potsHolder.TakeL() : potsHolder.TakeR();
 }
 
@@ -109,7 +109,7 @@ VAL MaximizeThree(CPotsHolder& potsHolder)
     if(pots.size() <= 3)
         return AlwaysHi(potsHolder);
     // ours minus their potential points
-    signed L = pots.front();
+    int L = pots.front();
     if(pots[1] > pots[pots.size()-1])
     {
         L = L - pots[1] + std::max(pots[2], pots[pots.size()-1]);
@@ -118,7 +118,7 @@ VAL MaximizeThree(CPotsHolder& potsHolder)
     {
         L = L - pots[pots.size()-1] + std::max(pots[1], pots[pots.size()-2]);
     }
-    signed R = pots.back();
+    int R = pots.back();
     if(pots[0] > pots[pots.size()-2])
     {
         R = R - pots[0] + std::max(pots[1], pots[pots.size()-2]);
@@ -130,9 +130,9 @@ VAL MaximizeThree(CPotsHolder& potsHolder)
     return L > R ? potsHolder.TakeL() : potsHolder.TakeR();
 }
 
-VAL CheckMaximize(const CDeque& pots, size_t l, size_t r, bool plus)
+int CheckMaximize(const CDeque& pots, size_t l, size_t r, bool enemy)
 {
-    int mul = plus ? 1 : -1;
+    int mul = enemy ? 1 : -1;
     if(l==r)
     {
         return mul*pots[l];
@@ -148,7 +148,8 @@ VAL CheckMaximize(const CDeque& pots, size_t l, size_t r, bool plus)
         mod = pots[r];
         --r;
     }
-    return mod*mul+CheckMaximize(pots, l, r, !plus);
+    std::cout << int(mod*mul) << std::endl;
+    return mod*mul+CheckMaximize(pots, l, r, !enemy);
 }
 
 VAL MaximizeAll(CPotsHolder& potsHolder)
@@ -157,9 +158,40 @@ VAL MaximizeAll(CPotsHolder& potsHolder)
     if(pots.size() <= 3)
         return AlwaysHi(potsHolder);
     // ours minus their potential points
-    signed L = pots.front() + CheckMaximize(pots, 1, pots.size()-1, false);
-    signed R = pots.back()  + CheckMaximize(pots, 0, pots.size()-2, false);
+    int L = pots.front() + CheckMaximize(pots, 1, pots.size()-1, false);
+    int R = pots.back()  + CheckMaximize(pots, 0, pots.size()-2, false);
     return L > R ? potsHolder.TakeL() : potsHolder.TakeR();
+}
+
+VAL CheckEnemy(const CDeque& pots, size_t l, size_t r, bool enemy)
+{
+    if(l==r)
+    {
+        return enemy ? pots[l] : 0;
+    }
+    VAL pts = 0;
+    if(pots[l] > pots[r])
+    {
+        pts = pots[l];
+        ++l;
+    }
+    else
+    {
+        pts = pots[r];
+        --r;
+    }
+    return (enemy ? pts : 0) + CheckMaximize(pots, l, r, !enemy);
+}
+
+VAL MinimizeEnemy(CPotsHolder &potsHolder)
+{
+    auto pots = potsHolder.GetPots();
+    if(pots.size() <= 3)
+        return AlwaysHi(potsHolder);
+    // enemy points
+    int L = CheckEnemy(pots, 1, pots.size()-1, false);
+    int R = CheckEnemy(pots, 0, pots.size()-2, false);
+    return L < R ? potsHolder.TakeL() : potsHolder.TakeR();
 }
 
 struct strategyInfo
@@ -179,6 +211,7 @@ strategyInfo STRATEGIES[] =
         { &MaximizePair, "maximize pair" },
         { &MaximizeThree,"maximize three" },
         { &MaximizeAll,  "maximize all" },
+        { &MinimizeEnemy,"minimize enemy" },
 };
 
 class CPlayer
@@ -205,18 +238,18 @@ public:
     }
 };
 
-bool gen = true;
+bool gen = false;
 bool verbose = !gen;
 
 CDeque GenPots()
 {
-    CDeque arrGen = {5, 7, 1, 3, 6, 1};
+    CDeque arrGen = {2, 3, 2, 1, 3, 2};
     if(gen) arrGen.clear();
     auto potsNum = 6;//4+rand()%10;
     potsNum -= potsNum%2;
     for(auto i = 0; i < potsNum; ++i)
     {
-        if(gen) arrGen.push_back(1+rand()%2);
+        if(gen) arrGen.push_back(1+uint(rand())%3);
     }
     return std::move(arrGen);
 }

@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F4DE00779B2E4E14CD3D385A /* test.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = F4DE00DF2595F3F1993D95D0 /* test.1 */; };
 		F4DE0537945F7205AAC0985C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F4DE05761A610E75B7F58819 /* main.cpp */; };
 /* End PBXBuildFile section */
 
@@ -18,14 +17,12 @@
 			dstPath = /usr/share/man/man1/;
 			dstSubfolderSpec = 0;
 			files = (
-				F4DE00779B2E4E14CD3D385A /* test.1 in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		F4DE00DF2595F3F1993D95D0 /* test.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = test.1; sourceTree = "<group>"; };
 		F4DE05761A610E75B7F58819 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		F4DE078328929858F1765E03 /* test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -45,7 +42,6 @@
 			isa = PBXGroup;
 			children = (
 				F4DE05761A610E75B7F58819 /* main.cpp */,
-				F4DE00DF2595F3F1993D95D0 /* test.1 */,
 			);
 			path = test;
 			sourceTree = "<group>";
